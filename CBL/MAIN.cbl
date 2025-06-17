@@ -19,6 +19,7 @@
        01  BUDGET-RECORD.
            05  CSV-LINE                PIC X(50).
        WORKING-STORAGE SECTION.
+       01  WS-CURRENCY                 PIC X(3) VALUE '€'.
        01  WS-CSV-DATA.
            05  CHANGE                  PIC X(10).
            05  COMMENT                 PIC X(50).
@@ -61,17 +62,34 @@
            PERFORM VARYING LOOP
                    FROM 1 BY 1
                    UNTIL LOOP > BUDGET-ENTRY-COUNT
+               IF CHANGE OF BUDGET-CHANGE(BUDGET-IDX) = 0 THEN
+                   SET BUDGET-IDX UP BY 1
+                   CONTINUE
+               END-IF
+               
                MOVE CHANGE OF BUDGET-CHANGE(BUDGET-IDX) TO WS-MONEY-STR
-               DISPLAY '  'FUNCTION TRIM(WS-MONEY-STR)'€' NO ADVANCING
-
-               COMPUTE FINAL-BUDGET =
-                     FINAL-BUDGET + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
+               DISPLAY '  '
+                   FUNCTION TRIM(WS-MONEY-STR)
+                   FUNCTION TRIM(WS-CURRENCY)
+                   NO ADVANCING
+               IF COMMENT OF BUDGET-CHANGE(BUDGET-IDX) NOT = SPACES THEN
+                   IF CHANGE OF BUDGET-CHANGE(BUDGET-IDX) > 0 THEN
+                        DISPLAY ' from ' NO ADVANCING
+                   ELSE DISPLAY ' to ' NO ADVANCING
+                   END-IF
+                    DISPLAY COMMENT OF BUDGET-CHANGE(BUDGET-IDX)
+               ELSE DISPLAY SPACE
+               END-IF
+               COMPUTE FINAL-BUDGET
+                     = FINAL-BUDGET
+                     + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
                SET BUDGET-IDX UP BY 1
            END-PERFORM.
 
            MOVE FINAL-BUDGET TO WS-MONEY-STR
            DISPLAY 'You (will) have '
-                   FUNCTION TRIM(WS-MONEY-STR)'€ left.'
+                   FUNCTION TRIM(WS-MONEY-STR)
+                   FUNCTION TRIM(WS-CURRENCY)' left.'
                    NO ADVANCING
            IF FINAL-BUDGET < 0.0 THEN
                 DISPLAY ' YOU WILL BE/ARE BANKRUPT!'
