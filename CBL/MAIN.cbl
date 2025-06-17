@@ -107,13 +107,19 @@
                    MOVE 112 TO RETURN-CODE
                    STOP RUN
                NOT ON OVERFLOW
-      *            The line beginning with '#' is used to mark the
-      *            initial budget.
-                   IF CSV-LINE(1:1) = '#' THEN
-                       MOVE FUNCTION TRIM (CSV-LINE(2:)) TO WS-MONEY-STR
-                       MOVE WS-MONEY-STR TO INITIAL-BUDGET
-                       EXIT PARAGRAPH
-                   END-IF
+                   EVALUATE TRUE
+      *                The line beginning with '#' is used to mark the
+      *                initial budget.
+                       WHEN CSV-LINE(1:1) = '#'
+                           MOVE FUNCTION TRIM (CSV-LINE(2:))
+                                TO WS-MONEY-STR
+                           MOVE WS-MONEY-STR TO INITIAL-BUDGET
+                           EXIT PARAGRAPH
+      *                A line beginning with '*' is a comment and thus
+      *                to be ignored.
+                       WHEN CSV-LINE(1:1) = '*' EXIT PARAGRAPH
+                   END-EVALUATE
+
                    IF CHANGE OF WS-CSV-DATA NOT = SPACES THEN
                        ADD 1 TO BUDGET-ENTRY-COUNT
                        MOVE CORR WS-CSV-DATA
