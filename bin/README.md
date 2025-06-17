@@ -1,1 +1,3 @@
 # **bin**ary files/executables will end up here...
+This directory is just a placeholder in the repo, removing the
+need of creating one before build.
