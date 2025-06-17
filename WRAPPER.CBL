@@ -6,6 +6,9 @@
       *
       * Budget app wrapper.
       *
+      * Environment variable `PARM` will be (maybe) used for command
+      * line options wannabe alternative.
+      *
       ******************************************************************
        DATA DIVISION.
        WORKING-STORAGE SECTION.

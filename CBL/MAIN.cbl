@@ -4,7 +4,7 @@
        DATE-WRITTEN. June 17, 2025.
       ******************************************************************
       *
-      * A miniature budget thingydoodah.
+      * A miniature budget calculations thing.
       *
       ******************************************************************
        ENVIRONMENT DIVISION.
@@ -89,6 +89,8 @@
                    MOVE 112 TO RETURN-CODE
                    STOP RUN
                NOT ON OVERFLOW
+      *            The line beginning with '#' is used to mark the
+      *            initial budget.
                    IF CSV-LINE(1:1) = '#' THEN
                        MOVE FUNCTION TRIM (CSV-LINE(2:)) TO WS-MONEY-STR
                        MOVE WS-MONEY-STR TO INITIAL-BUDGET
