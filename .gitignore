@@ -1,0 +1,12 @@
+!bin/README.md
+bin/*
+!DATA/README.md
+DATA/*
+
+*.cmake
+CMakeCache*
+CMakeFiles*
+Makefile
+
+.vs
+.vscode
