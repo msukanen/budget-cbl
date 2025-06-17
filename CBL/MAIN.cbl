@@ -19,6 +19,7 @@
        01  BUDGET-RECORD.
            05  CSV-LINE                PIC X(50).
        WORKING-STORAGE SECTION.
+       COPY CONSOLE.
        01  WS-CURRENCY                 PIC X(3) VALUE '€'.
        01  WS-CSV-DATA.
            05  CHANGE                  PIC X(10).
@@ -34,6 +35,7 @@
                10  COMMENT             PIC X(50) VALUE '-'.
        01  WS-MONEY-STR                PIC +(4)9.99.
        01  LOOP                        USAGE COMP-1.
+       01  WS-TMP-STR10                PIC X(10).
 
        PROCEDURE DIVISION.
            SET BUDGET-IDX TO 1.
@@ -49,14 +51,19 @@
 
            MOVE INITIAL-BUDGET TO FINAL-BUDGET
            MOVE INITIAL-BUDGET TO WS-MONEY-STR
-           DISPLAY 'With your initial budget of '
-                   FUNCTION TRIM(WS-MONEY-STR)'€ and'
+           DISPLAY ANSI-ESC ANSI-RESET
+                   'With your initial budget of '
+                   ANSI-ESC '[1;33m'
+                   FUNCTION TRIM(WS-MONEY-STR)
+                   ANSI-ESC ANSI-RESET WS-CURRENCY' and'
                    NO ADVANCING
            IF BUDGET-ENTRY-COUNT < 1 THEN
-               DISPLAY ' with no changes detected! Awesome?'
+               DISPLAY ' with no changes detected! Awesome?' ANSI-RESET
                GOBACK
            END-IF
-           DISPLAY '…'
+           DISPLAY '…' ANSI-ESC ANSI-RESET
+           DISPLAY ' .----'X'1B''[1mAMNT'X'1B''[0m ∵ '
+                   X'1B''[1mFROM/TO'X'1B''[0m …'
 
            SET BUDGET-IDX TO 1
            PERFORM VARYING LOOP
@@ -68,8 +75,15 @@
                END-IF
                
                MOVE CHANGE OF BUDGET-CHANGE(BUDGET-IDX) TO WS-MONEY-STR
+               EVALUATE TRUE
+                   WHEN CHANGE OF BUDGET-CHANGE(BUDGET-IDX) > 0
+                       DISPLAY ANSI-ESC ANSI-GREEN NO ADVANCING
+                   WHEN CHANGE OF BUDGET-CHANGE(BUDGET-IDX) < 0
+                       DISPLAY ANSI-ESC ANSI-RED-BOLD NO ADVANCING
+               END-EVALUATE
                DISPLAY '  '
-                   FUNCTION TRIM(WS-MONEY-STR)
+                   WS-MONEY-STR
+                   ANSI-ESC ANSI-RESET
                    FUNCTION TRIM(WS-CURRENCY)
                    NO ADVANCING
                IF COMMENT OF BUDGET-CHANGE(BUDGET-IDX) NOT = SPACES THEN
@@ -87,11 +101,13 @@
            END-PERFORM.
 
            MOVE FINAL-BUDGET TO WS-MONEY-STR
-           DISPLAY 'You (will) have '
-                   FUNCTION TRIM(WS-MONEY-STR)
+           DISPLAY ' `---------.'
+           DISPLAY ANSI-ESC ANSI-YELLOW-BOLD
+                   '  'WS-MONEY-STR
+                   ANSI-ESC ANSI-RESET
                    FUNCTION TRIM(WS-CURRENCY)' left.'
                    NO ADVANCING
-           IF FINAL-BUDGET < 0.0 THEN
+           IF FINAL-BUDGET < 0 THEN
                 DISPLAY ' YOU WILL BE/ARE BANKRUPT!'
            ELSE DISPLAY SPACE.
            GOBACK.
