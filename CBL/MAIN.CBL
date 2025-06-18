@@ -109,7 +109,7 @@
                    ELSE DISPLAY '   to ' NO ADVANCING
                    END-IF
                    DISPLAY COMMENT OF BUDGET-CHANGE(BUDGET-IDX)
-               ELSE DISPLAY EOL
+               ELSE DISPLAY EOL NO ADVANCING
                END-IF
                COMPUTE FINAL-BUDGET
                      = FINAL-BUDGET
@@ -124,7 +124,7 @@
                    NO ADVANCING.
            IF FINAL-BUDGET < 0 THEN
                 DISPLAY ' YOU WILL BE/ARE BANKRUPT!'
-           ELSE DISPLAY EOL.
+           ELSE DISPLAY EOL NO ADVANCING.
            GOBACK.
 
        PROCESS-CSV-LINE.
@@ -158,13 +158,4 @@
                        SET BUDGET-IDX UP BY 1
                    END-IF
            END-UNSTRING.
-           EXIT PARAGRAPH.
-
-       DISPLAY-OUTPUT-NO-ADVANCING.
-           DISPLAY WS-OUTPUT-LINE NO ADVANCING.
-           EXIT PARAGRAPH.
-
-       DISPLAY-OUTPUT.
-           PERFORM DISPLAY-OUTPUT-NO-ADVANCING.
-           DISPLAY EOL NO ADVANCING.
            EXIT PARAGRAPH.
