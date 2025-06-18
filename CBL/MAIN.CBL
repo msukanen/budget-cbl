@@ -23,15 +23,21 @@
        01  WS-CSV-DATA.
            05  CHANGE                  PIC X(10).
            05  COMMENT                 PIC X(50).
+           05  POTENTIAL               PIC X VALUE '-'.
+               88  POTENTIAL-ONLY      VALUE 'Y'.
+               88  NOT-POTENTIAL-ONLY  VALUE '-'.
        01  WS-BUDGET.
            05  INITIAL-BUDGET          PIC S9(5)V9(2) USAGE COMP-3.
            05  FINAL-BUDGET            PIC S9(5)V9(2) USAGE COMP-3.
+           05  POTENTIAL-BUDGET        PIC S9(5)V9(2) USAGE COMP-3.
            05  BUDGET-ENTRY-COUNT      PIC 9(5) USAGE COMP-3 VALUE 0.
            05  BUDGET-CHANGE           OCCURS 0 TO 1000 TIMES
                                        DEPENDING ON BUDGET-ENTRY-COUNT
                                        INDEXED BY BUDGET-IDX.
                10  CHANGE              PIC S9(5)V9(2) USAGE COMP-3.
                10  COMMENT             PIC X(50) VALUE '-'.
+               10  POTENTIAL           PIC X VALUE '-'.
+                   88  POTENTIAL-ONLY  VALUE 'Y'.
        01  WS-MONEY-STR                PIC +(4)9.99.
        01  LOOP                        USAGE COMP-1.
        01  WS-TMP-STR10                PIC X(10).
@@ -68,6 +74,7 @@
            CLOSE BUDGET-FILE.
 
            MOVE INITIAL-BUDGET TO FINAL-BUDGET
+           MOVE INITIAL-BUDGET TO POTENTIAL-BUDGET
            MOVE INITIAL-BUDGET TO WS-MONEY-STR
            DISPLAY CONS-RST 'With your initial budget of '
                    BOLD-YELLOW FUNCTION TRIM(WS-MONEY-STR)
@@ -100,20 +107,31 @@
                        DISPLAY BOLD-RED NO ADVANCING
                END-EVALUATE
                INITIALIZE WS-OUTPUT-LINE
-               DISPLAY '  'WS-MONEY-STR
+               IF POTENTIAL-ONLY OF BUDGET-CHANGE(BUDGET-IDX)
+                    DISPLAY '( ' NO ADVANCING
+               ELSE DISPLAY '  ' NO ADVANCING END-IF
+               DISPLAY WS-MONEY-STR
                        CONS-RST FUNCTION TRIM(WS-CURRENCY)
                        NO ADVANCING
                IF COMMENT OF BUDGET-CHANGE(BUDGET-IDX) NOT = SPACES THEN
+                   IF POTENTIAL-ONLY OF BUDGET-CHANGE(BUDGET-IDX) THEN
+                        DISPLAY ')  ' NO ADVANCING
+                   ELSE DISPLAY '   ' NO ADVANCING END-IF
                    IF CHANGE OF BUDGET-CHANGE(BUDGET-IDX) > 0 THEN
-                        DISPLAY '   from ' NO ADVANCING
-                   ELSE DISPLAY '   to ' NO ADVANCING
-                   END-IF
+                        DISPLAY 'from ' NO ADVANCING
+                   ELSE DISPLAY 'to ' NO ADVANCING END-IF
                    DISPLAY COMMENT OF BUDGET-CHANGE(BUDGET-IDX)
                ELSE DISPLAY EOL NO ADVANCING
                END-IF
-               COMPUTE FINAL-BUDGET
-                     = FINAL-BUDGET
-                     + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
+
+               COMPUTE POTENTIAL-BUDGET
+                       = POTENTIAL-BUDGET
+                       + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
+               IF NOT POTENTIAL-ONLY OF BUDGET-CHANGE(BUDGET-IDX) THEN
+                   COMPUTE FINAL-BUDGET
+                         = FINAL-BUDGET
+                         + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
+               END-IF
                SET BUDGET-IDX UP BY 1
            END-PERFORM.
 
@@ -122,9 +140,21 @@
                    BOLD-YELLOW'  'WS-MONEY-STR
                    CONS-RST FUNCTION TRIM(WS-CURRENCY)
                    NO ADVANCING.
-           IF FINAL-BUDGET < 0 THEN
-                DISPLAY ' YOU WILL BE/ARE BANKRUPT!'
-           ELSE DISPLAY EOL NO ADVANCING.
+           IF POTENTIAL-BUDGET <> FINAL-BUDGET THEN
+               MOVE POTENTIAL-BUDGET TO WS-MONEY-STR
+               DISPLAY CONS-RST' ('
+                       FUNCTION TRIM(WS-MONEY-STR)
+                       FUNCTION TRIM(WS-CURRENCY)
+                       ')' NO ADVANCING
+           END-IF.
+           EVALUATE TRUE
+               WHEN FINAL-BUDGET < 0
+                   DISPLAY ' YOU WILL BE/ARE BANKRUPT!'
+               WHEN POTENTIAL-BUDGET < 0
+                   DISPLAY ' You might end up bankrupt…'
+               WHEN OTHER
+                   DISPLAY EOL NO ADVANCING
+           END-EVALUATE.
            GOBACK.
 
        PROCESS-CSV-LINE.
@@ -138,6 +168,7 @@
                    MOVE 112 TO RETURN-CODE
                    STOP RUN
                NOT ON OVERFLOW
+                   SET NOT-POTENTIAL-ONLY OF WS-CSV-DATA TO TRUE
                    EVALUATE TRUE
       *                The line beginning with '#' is used to mark the
       *                initial budget.
@@ -148,7 +179,15 @@
                            EXIT PARAGRAPH
       *                A line beginning with '*' is a comment and thus
       *                to be ignored.
-                       WHEN CSV-LINE(1:1) = '*' EXIT PARAGRAPH
+                       WHEN CSV-LINE(1:1) = '*'
+                           EXIT PARAGRAPH
+      *                Mark a potential, but not necessarily happening
+      *                budget change with '~' in front of the value.
+                       WHEN CSV-LINE(1:1) = '~'
+                           MOVE CHANGE OF WS-CSV-DATA TO WS-TMP-STR10
+                           MOVE FUNCTION TRIM (WS-TMP-STR10(2:))
+                                TO CHANGE OF WS-CSV-DATA
+                           SET POTENTIAL-ONLY OF WS-CSV-DATA TO TRUE
                    END-EVALUATE
 
                    IF CHANGE OF WS-CSV-DATA NOT = SPACES THEN
