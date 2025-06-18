@@ -1,7 +1,7 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID.   BUDGET-MAIN.
        AUTHOR.       Markku Sukanen.
-       DATE-WRITTEN. June 17, 2025.
+       DATE-WRITTEN. June 17—June 18, 2025.
       ******************************************************************
       *
       * A miniature budget calculations thing.
