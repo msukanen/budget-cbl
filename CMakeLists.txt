@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(G4SSG)
+project(Budget-CBL)
 
 enable_testing()
 
