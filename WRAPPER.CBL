@@ -4,7 +4,7 @@
        DATE-WRITTEN. 17 June, 2025.
       ******************************************************************
       *
-      * Budget app wrapper.
+      * BudGet app wrapper.
       *
       * Environment variable `PARM` will be (maybe) used for command
       * line options wannabe alternative.

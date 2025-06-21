@@ -1,25 +1,20 @@
        IDENTIFICATION DIVISION.
        PROGRAM-ID.   BUDGET-MAIN.
        AUTHOR.       Markku Sukanen.
-       DATE-WRITTEN. June 17—June 18, 2025.
+       DATE-WRITTEN. June 17—June 21, 2025.
       ******************************************************************
       *
-      * A miniature budget calculations thing.
+      * A miniature BudGet calculations thing.
       *
       * Note that we have to resort to using 'e' instead of '€' until
       * NATIONAL PIC gets properly implemented (for GnuCOBOL at least).
       *
       ******************************************************************
        ENVIRONMENT DIVISION.
-       CONFIGURATION SECTION.
-       SPECIAL-NAMES.
-                     CURSOR IS CURSOR-POSITION
-                     CRT STATUS IS CRT-STATUS.
        INPUT-OUTPUT SECTION.
        FILE-CONTROL.
            SELECT BUDGET-FILE          ASSIGN TO "DATA/BUDGET.DTA"
                                        ORGANIZATION IS LINE SEQUENTIAL.
-
        DATA DIVISION.
        FILE SECTION.
        FD  BUDGET-FILE
@@ -32,16 +27,11 @@
                COPY DATAPOTN.
            05  COMMENT                 PIC X(30).                       30
        WORKING-STORAGE SECTION.
-       01  BUDGET-FILE-STATUS          PIC X VALUE '-'.
+       01  FILE-STATUS                 PIC X VALUE '-'.
            88  EOF                     VALUE 'Y'.
        01  CURSOR-POSITION.
            02  CURSOR-LINE             PIC 99.
            02  CURSOR-COL              PIC 99.
-       01  CRT-STATUS.
-           05  KEY1                    PIC X.
-           05  KEY2                    PIC X.
-               88  FKEY-10             VALUE 11.
-           05  FILLER                  PIC XX.
       *01  WS-CURRENCY                 PIC N(4) VALUE N'€'.
        01  WS-CURRENCY                 PIC X VALUE 'e'.                 ↑ nation
        01  INITIAL-BUDGET              PIC S9(5)V99 USAGE COMP-3
@@ -60,16 +50,9 @@
                10  COMMENT             PIC X(30).
                10  RECORD-TYPE         PIC X VALUE SPACE.
                    COPY DATAPOTN.
-       01  LOOP                        USAGE COMP-1.
-       01  WS-TMP-STR10                PIC X(10).
-       01  ACCEPT-ITEM1                PIC X.
       * Screen stuff:
-       01  BUDGET-LINE                 PIC 99.
-       77  AMNT-COL                    PIC 99 VALUE 38.
-       77  AMNT-CHANGE-COL             PIC 99 VALUE 40.
-       77  AMNT-CURRENCY-COL           PIC 99 VALUE 49.
-       77  AMNT-COMMENT-COL            PIC 99 VALUE 52.
-       01  BUDGET-CHANGE-COLOR         PIC 9.
+       77  BUDGET-CHANGE-COL           PIC 99 VALUE 40.
+       01  BUDGET-STATE                PIC 9.
            88  BUDGET-DEBIT            VALUE 4.                         4-red
            88  BUDGET-CREDIT           VALUE 2.                         2-green
        SCREEN SECTION.
@@ -95,18 +78,16 @@
                03  LINE 5 COLUMN 3     VALUE 'Worst-case: '.
                03  PIC -(5)9.99 FROM POTENTIAL-BUDGET.
                03  PIC X FROM WS-CURRENCY.
-       01  BUDGET-CHANGE-TEXT.
-           03  LINE BUDGET-LINE COLUMN AMNT-CHANGE-COL
+       01  ONE-BUDGET-ENTRY.
+           02  LINE CURSOR-LINE COLUMN BUDGET-CHANGE-COL
                PIC -(5)9.99
                FROM CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
-               FOREGROUND-COLOR BUDGET-CHANGE-COLOR.
-           03  PIC X FROM WS-CURRENCY.
-           03  PIC XXX VALUE ' - '.
-           03  PIC X(26)
-               FROM COMMENT OF BUDGET-CHANGE(BUDGET-IDX).
+               FOREGROUND-COLOR BUDGET-STATE.
+           02  PIC X FROM WS-CURRENCY.
+           02  PIC XXX VALUE ' - '.
+           02  PIC X(26) FROM COMMENT OF BUDGET-CHANGE(BUDGET-IDX).
 
        PROCEDURE DIVISION.
-           SET BUDGET-IDX TO 1.
            OPEN INPUT BUDGET-FILE.
            PERFORM VARYING BUDGET-IDX FROM 1 BY 1 UNTIL EOF
                READ BUDGET-FILE INTO BUDGET-RECORD
@@ -117,7 +98,8 @@
            CLOSE BUDGET-FILE.
 
            DISPLAY MAIN-SCREEN.
-           MOVE 3 TO BUDGET-LINE.
+      *    DISPLAY all the (relevant) budget change lines:
+           MOVE 3 TO CURSOR-LINE.
            PERFORM VARYING BUDGET-IDX FROM 1 BY 1
                    UNTIL BUDGET-IDX > ENTRY-COUNT
                IF NOT REC-INITIAL OF BUDGET-CHANGE(BUDGET-IDX) THEN
@@ -125,8 +107,8 @@
                         SET BUDGET-DEBIT TO TRUE
                    ELSE SET BUDGET-CREDIT TO TRUE
                    END-IF
-                   DISPLAY BUDGET-CHANGE-TEXT
-                   ADD 1 TO BUDGET-LINE
+                   DISPLAY ONE-BUDGET-ENTRY
+                   ADD 1 TO CURSOR-LINE
                END-IF
            END-PERFORM.
            GOBACK.
@@ -146,7 +128,6 @@
                          = FINAL-BUDGET
                          + CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
            END-EVALUATE.
-
            ADD 1 TO ENTRY-COUNT.
            EXIT PARAGRAPH.
 
