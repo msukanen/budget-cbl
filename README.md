@@ -6,7 +6,7 @@ insert your initial budget and credit/debit into `DATA/BUDGET.CSV` and run.
 * `bin` - the `budget` executable will appear here.
 * `CBL` - the source files.
 * `CPY` - "copybook" files, if there is/will be any.
-* `DATA` - a placce for your `BUDGET.CSV`, see [DATA/README.md](DATA/README.md)
+* `DATA` - a placce for your `BUDGET.DTA`, see [DATA/README.md](DATA/README.md)
 
 # Requirements
 * **CMake** - ditto.

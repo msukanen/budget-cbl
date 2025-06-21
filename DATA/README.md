@@ -1,17 +1,26 @@
-# `BUDGET.CSV`
-Put a `BUDGET.CSV` file here.
-## Structure of `BUDGET.CSV`
-* Line 1: begins with `#`, followed by your initial budget, e.g. `#599.99`.
-* Lines 2..1000: added/subtracted value, e.g. `12.34`, `-52.25`, `+77.77`.
-  Values can have an associated comment, separated from the value with `;`.
-
-Empty lines are quietly ignored and so is all leading/trailing spacing.
-
+# `BUDGET.DTA`
+Put a `BUDGET.DTA` file here.
+## Structure of `BUDGET.DTA`
+Each line is as follows:
+* 9 bytes numeric value with (or without) a sign: S00000.00
+* 1 byte for "mode": `I` (initial starting point), `P` (potential, but not necessarily happening), `M` (is late!).
+* 30 bytes for a comment of some sort.
 ### Example
-```CSV
-#543.21
--12.34; oh no, I lost a few...
-101.01; yay, gains!
--432;   bye money...
-+66.6;  deal with the devil...
+```DTA
+   -14.16I
+   595.36 Some pay #1
+   299.25 Some pay #2
+   -20.22 Burgers
+   -57.61 Pizzas
+   -30.30MPhone bill
+   -30.26 Phone bill
+   -57.48 Electricity
+   -33.24 Internet
+  -605.00 Rent
+    -6.00PMisc #1
+    -6.00PMisc #2
+    36.00 Random pay #1
+   -22.99 Google Gemini Pro
+    -9.99 Anime
+    -9.99 Discord
 ```
