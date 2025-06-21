@@ -51,7 +51,7 @@
                10  RECORD-TYPE         PIC X VALUE SPACE.
                    COPY DATAPOTN.
       * Screen stuff:
-       77  BUDGET-CHANGE-COL           PIC 99 VALUE 40.
+       77  BUDGET-CHANGE-COL           PIC 99 VALUE 30.
        01  BUDGET-STATE                PIC 9.
            88  BUDGET-DEBIT            VALUE 4.                         4-red
            88  BUDGET-CREDIT           VALUE 2.                         2-green
@@ -62,8 +62,9 @@
            02  HDR                     FOREGROUND-COLOR 7
                                        BACKGROUND-COLOR 1.
                03  LINE 1 ERASE EOL.
-               03  LINE 1 COLUMN 11    VALUE 'BudGet-CBL'.
-               03  LINE 1 COLUMN 21 ERASE EOL.
+               03  LINE 1 COLUMN 11
+                   VALUE 'BudGet-CBL - Copyright (c) 2025 Markku '.
+               03  VALUE 'Sukanen' ERASE EOL.
            02  MONEYS                  FOREGROUND-COLOR 7
                                        BACKGROUND-COLOR 0.
       *            Initial budget:
