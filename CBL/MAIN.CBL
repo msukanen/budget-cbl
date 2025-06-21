@@ -19,36 +19,45 @@
        FILE SECTION.
        FD  BUDGET-FILE
            RECORD IS VARYING IN SIZE
+      *  bytes
+      *     9  - monetary value
+      *     1  - [opt] mode, see DATAPOTN
+      *    30  - [opt] comment
            FROM 9 TO 40 CHARACTERS
            DEPENDING ON RECORD-LENGTH.
        01  BUDGET-RECORD.
            05  CHANGE                  PIC -(5)9.99.                    9
-           05  RECORD-TYPE             PIC X.                           1
+           05  RECORD-MODE             PIC X.                           1
                COPY DATAPOTN.
+      *                                Is 30 characters enough for a
+      *                                proper comment?  Maybe is, maybe
+      *                                isn't, but it'll do for now.
            05  COMMENT                 PIC X(30).                       30
        WORKING-STORAGE SECTION.
        01  FILE-STATUS                 PIC X VALUE '-'.
            88  EOF                     VALUE 'Y'.
        01  CURSOR-POSITION.
            02  CURSOR-LINE             PIC 99.
-           02  CURSOR-COL              PIC 99.
-      *01  WS-CURRENCY                 PIC N(4) VALUE N'€'.
-       01  WS-CURRENCY                 PIC X VALUE 'e'.                 ↑ nation
+      *    02  CURSOR-COL              PIC 99.
+       01  WS-CURRENCY                 PIC X VALUE 'e'.                  ← N'€'
        01  INITIAL-BUDGET              PIC S9(5)V99 USAGE COMP-3
                                        VALUE 0.
        01  FINAL-BUDGET                PIC S9(5)V99 USAGE COMP-3
                                        VALUE 0.
-       01  POTENTIAL-BUDGET            PIC S9(5)V99 USAGE COMP-3
+       01  WORST-CASE-BUDGET            PIC S9(5)V99 USAGE COMP-3
                                        VALUE 0.
+      * Tens of thousands entries is probably overkill to prepare for,
+      * but what the heck, why not!
        01  ENTRY-COUNT                 PIC 9(5) USAGE COMP-3 VALUE 0.
        01  WS-BUDGET.
            05  RECORD-LENGTH           PIC 9(4) COMP.
+      *                                1,000 entries? Pretty busy …
            05  BUDGET-CHANGE           OCCURS 0 TO 1000 TIMES
                                        DEPENDING ON ENTRY-COUNT
                                        INDEXED BY BUDGET-IDX.
                10  CHANGE              PIC S9(5)V99 USAGE COMP-3.
                10  COMMENT             PIC X(30).
-               10  RECORD-TYPE         PIC X VALUE SPACE.
+               10  RECORD-MODE         PIC X VALUE SPACE.
                    COPY DATAPOTN.
       * Screen stuff:
        77  BUDGET-CHANGE-COL           PIC 99 VALUE 30.
@@ -59,34 +68,36 @@
        01  MAIN-SCREEN                 BLANK SCREEN
                                        FOREGROUND-COLOR 7
                                        BACKGROUND-COLOR 0.
-           02  HDR                     FOREGROUND-COLOR 7
+         02 HDR                        FOREGROUND-COLOR 7
                                        BACKGROUND-COLOR 1.
-               03  LINE 1 ERASE EOL.
-               03  LINE 1 COLUMN 11
-                   VALUE 'BudGet-CBL - Copyright (c) 2025 Markku '.
-               03  VALUE 'Sukanen' ERASE EOL.
-           02  MONEYS                  FOREGROUND-COLOR 7
+           03  LINE 1 ERASE EOL.
+           03  LINE 1 COLUMN 11
+               VALUE 'BudGet-CBL - Copyright (c) 2025 Markku '.
+           03  VALUE 'Sukanen' ERASE EOL.
+         02  MONEYS                    FOREGROUND-COLOR 7
                                        BACKGROUND-COLOR 0.
-      *            Initial budget:
-               03  LINE 3 COLUMN 6     VALUE 'Initial: '.
-               03  PIC -(5)9.99 FROM INITIAL-BUDGET.
-               03  PIC X FROM WS-CURRENCY.
-      *            Estimated budget:
-               03  LINE 4 COLUMN 4     VALUE 'Estimated: '.
-               03  PIC -(5)9.99 FROM FINAL-BUDGET.
-               03  PIC X FROM WS-CURRENCY.
-      *            Worst-case budget:
-               03  LINE 5 COLUMN 3     VALUE 'Worst-case: '.
-               03  PIC -(5)9.99 FROM POTENTIAL-BUDGET.
-               03  PIC X FROM WS-CURRENCY.
+           03  SCR-INITIAL-BUDGET.
+      *        Initial budget:
+             04  LINE 3 COLUMN 6 VALUE 'Initial: '.
+             04  PIC -(5)9.99 FROM INITIAL-BUDGET.
+             04  PIC X FROM WS-CURRENCY.
+           03  SCR-ESTIMATED-BUDGET.
+      *        Estimated budget:
+             04  LINE 4 COLUMN 4 VALUE 'Estimated: '.
+             04  PIC -(5)9.99 FROM FINAL-BUDGET.
+             04  PIC X FROM WS-CURRENCY.
+           03  SCR-WORST-CASE-BUDGET.
+      *        Worst-case budget:
+             04  LINE 5 COLUMN 3 VALUE 'Worst-case: '.
+             04  PIC -(5)9.99 FROM WORST-CASE-BUDGET.
+             04  PIC X FROM WS-CURRENCY.
        01  ONE-BUDGET-ENTRY.
-           02  LINE CURSOR-LINE COLUMN BUDGET-CHANGE-COL
-               PIC -(5)9.99
-               FROM CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
-               FOREGROUND-COLOR BUDGET-STATE.
-           02  PIC X FROM WS-CURRENCY.
-           02  PIC XXX VALUE ' - '.
-           02  PIC X(26) FROM COMMENT OF BUDGET-CHANGE(BUDGET-IDX).
+         02  LINE CURSOR-LINE COLUMN BUDGET-CHANGE-COL
+             PIC -(5)9.99 FROM CHANGE OF BUDGET-CHANGE(BUDGET-IDX)
+             FOREGROUND-COLOR BUDGET-STATE.
+         02  PIC X FROM WS-CURRENCY.
+         02  PIC XXX VALUE ' - '.
+         02  PIC X(26) FROM COMMENT OF BUDGET-CHANGE(BUDGET-IDX).
 
        PROCEDURE DIVISION.
            OPEN INPUT BUDGET-FILE.
@@ -120,7 +131,7 @@
                WHEN REC-INITIAL OF BUDGET-RECORD
                    MOVE CHANGE OF BUDGET-RECORD TO INITIAL-BUDGET
                    MOVE INITIAL-BUDGET TO FINAL-BUDGET
-                   MOVE INITIAL-BUDGET TO POTENTIAL-BUDGET
+                   MOVE INITIAL-BUDGET TO WORST-CASE-BUDGET
                WHEN REC-POTENTIAL OF BUDGET-RECORD
                    PERFORM COMPUTE-POTENTIAL-BUDGET
                WHEN OTHER
@@ -133,7 +144,7 @@
            EXIT PARAGRAPH.
 
        COMPUTE-POTENTIAL-BUDGET.
-           COMPUTE POTENTIAL-BUDGET
-                 = POTENTIAL-BUDGET
+           COMPUTE WORST-CASE-BUDGET
+                 = WORST-CASE-BUDGET
                  + CHANGE OF BUDGET-CHANGE(BUDGET-IDX).
            EXIT PARAGRAPH.
